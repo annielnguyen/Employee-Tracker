@@ -34,3 +34,11 @@ const viewRoles = () => {
     })
 }
 
+const viewEmployees = () => {
+    const query = 'SELECT * FROM employee';
+    connection.query(query, (err, res) => {
+        if (err) throw err;
+        console.table(res);
+        init();
+    })
+}
