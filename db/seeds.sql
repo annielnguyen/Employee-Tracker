@@ -41,7 +41,7 @@ VALUES ("Manager", 100000, 1),
         ("Lawyer",140000,4);
 
 INSERT into employee(first_name, last_name, role_id, manager_id)
-VALUES("John","Smith", 1, NULL),
-      ("Mary","Jones", 2, 1),
-      ("Justin","Bieber", 3, 2),
+VALUES("Kris","Jenner", 1, NULL),
+      ("Kylie,"Jenner", 2, 1),
+      ("Kourtney","Kardashian", 3, 2),
       ("Kim", "Kardashian",4,NULL);

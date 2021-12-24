@@ -1,13 +1,14 @@
-const mysql2 = require("mysq2");
+const mysql2 = require("mysql2");
 const inquirer = require("inquirer");
 const cTable = require("console.table");
-require('dotenv')
+require('dotenv').config()
 
-//connection
-const connection = mysql.createConnection({
+//creating connection
+const connection = mysql2.createConnection({
     host: 'localhost',
     user: 'root',
-    password: 'UCLA123!',
+    port: 3306,
+    password: process.env.DB_PASSWORD,
     database: 'employeeTracker_db'
   });
 
@@ -15,10 +16,10 @@ const connection = mysql.createConnection({
     if (err) throw err;
     init();
 });
-//view list of departments, roles, employees
+
+//view list of departments, roles, employee roster
 const viewDepartments = () => {
-    const query = 'SELECT * FROM department';
-    connection.query(query, (err, res) => {
+    connection.query('SELECT * FROM department', (err, res) => {
         if (err) throw err;
         console.table(res);
         init();
@@ -26,8 +27,7 @@ const viewDepartments = () => {
 }
 
 const viewRoles = () => {
-    const query = 'SELECT * FROM role';
-    connection.query(query, (err, res) => {
+    connection.query('SELECT * FROM role', (err, res) => {
         if (err) throw err;
         console.table(res);
         init();
@@ -35,28 +35,27 @@ const viewRoles = () => {
 }
 
 const viewEmployees = () => {
-    const query = 'SELECT * FROM employee';
-    connection.query(query, (err, res) => {
+    connection.query('SELECT * FROM employee', (err, res) => {
         if (err) throw err;
         console.table(res);
         init();
     })
 }
 
+//Add department
 const addDepartment = () => {
     inquirer.prompt({
         type: "input",
         name: "department",
         message: "What is the name of the department?"
-    }).then((answer) => {
-        const query = 'INSERT INTO department(name) VALUE (?)';
-        connection.query(query, answer.department, (err, res) => {
-            if (err) throw err;
-            listDepartments();
-            init();
-        });
     })
+    .then(function(response){
+        connection.query('INSERT INTO department', function (err, data) {
+            console.log("The department name has been added.");
+          });
+    });
 }
+//add role
 const addRole = () => {
     inquirer.prompt([
         {
@@ -73,17 +72,14 @@ const addRole = () => {
             type: "input",
             name: "departmentId",
             message: "What is the department ID number?"
-        }
-    ]).then((answer) => {
-        const query = 'INSERT INTO role(title, salary, department_id) VALUE (?, ?, ?)';
-        connection.query(query, [answer.title, answer.salary, answer.departmentId], (err, res) => {
-            if (err) throw err;
-            listRoles();
-            init();
-        })
-    })
+        }])
+        .then(function(response){
+        connection.query('SELECT * FROM role', function (err, data) {
+            console.log("The role has been added.");
+        });
+    });
 }
-
+//add employee
 const addEmployee = () => {
     inquirer.prompt([
         {
@@ -107,32 +103,41 @@ const addEmployee = () => {
             message: "Enter their mananger's ID or 'null' if there is no manager"
         }
     ]).then((answer) => {
-        const query = 'INSERT INTO employee(first_name, last_name, role_id, manager_id) VALUE (?, ?, ?, ?)';
-        connection.query(query, [answer.firstName, answer.lastName, answer.roleId, answer.managerId], (err, res) => {
+        connection.query('INSERT INTO employee(first_name, last_name, role_id, manager_id) VALUE (?, ?, ?, ?)', [answer.firstName, answer.lastName, answer.roleId, answer.managerId], (err, res) => {
             if (err) throw err;
-            listEmployees();
+            viewEmployees();
             init();
         })
     })
 }
 
+//update employee
 const updateEmployee= () => {
     inquirer.prompt([
         {
             type: "input",
-            name: "employeeId",
+            name: "employee_id",
             message: "Enter the employee ID would you like to update"
         },
         {
             type: "input",
-            name: "roleId",
+            name: "role_id",
             message: "What is the ID of their new role?"
+}])
+.then(function(response){
+ connection.query('UPDATE employee SET role_id= ? WHERE id=?',[response.role_id, response.employee_id], function (err, data) {
+       console.log(err,data)
+    console.log("The empoyee's info has been updated.");
+    });
+});
 }
+
+//prompt at start of application
 const init = () => {
     inquirer.prompt({
         type: "list",
         name: "select",
-        message: "Select from the choices below",
+        message: "What would you like to do?",
         choices: [
             "View company departments",
             "View company roles",
@@ -140,22 +145,23 @@ const init = () => {
             "Add a department",
             "Add a role",
             "Add employee to roster",
-            "UpdateEmployee"
+            "Update an employee's info"
         ]
     }).then((answer) => {
         if (answer.select === "View company departments") {
-            listDepartments();
+            viewDepartments();
         } else if (answer.select === "View company roles") {
-            listRoles();
+            viewRoles();
         } else if (answer.select === "View employee roster") {
-            listEmployees();
+            viewEmployees();
         } else if (answer.select === "Add a department") {
             addDepartment();
         } else if (answer.select === "Add a role") {
             addRole();
         } else if (answer.select === "Add employee to roster") {
             addEmployee();
-        } else if (answer.select === "Update an employee") {
+        } else if (answer.select === "Update an employee's info") {
+            updateEmployee();
         }
     })
 }
